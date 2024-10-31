@@ -1,8 +1,14 @@
-# dApps staking indexer
+# GameDAO Astar Indexer
+
+This is an updated indexer based on the Astar dApp Staking Indexer and modified to work with GameDAO.
+
+- added hasura to allow for subscriptions in 3rd party apps
+- added deployment to run a self hosted graph
+- added Dockerfile to build an image using the built indexer
 
 ## Prerequisites
 
-- npm, node ≥ v16
+- npm, node ≥ v20
 - git
 - docker
 - docker-compose with docker user & group
