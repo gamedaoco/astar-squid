@@ -1,15 +1,60 @@
 version: "3"
 
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: squid
-      POSTGRES_PASSWORD: postgres
-    shm_size: 1gb
-    ports:
-      - "${DB_PORT}:5432"
-      # command: ["postgres", "-c", "log_statement=all"]
-#    volumes:
-#      - ./data/db:/var/lib/postgresql/data
 
+  postgres:
+    image: postgres:11
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - /data/.tmp/pg-squid:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: squid
+
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - /data/.tmp/pg-cache:/data
+
+  graphql:
+    image: hasura/graphql-engine:v2.44.0
+    privileged: true
+    ports:
+      - "8080:8080"
+    restart: always
+    environment:
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:postgres@postgres:5432/squid
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_KEY}
+      # HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      # HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
+      # PG_DATABASE_URL: postgres://postgres:postgres@postgres:5432/squid
+
+  processor:
+    image: gamedao/astar-squid
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_PASS=${DB_PASS}
+      - RPC_ENDPOINT=https://astar.api.onfinality.io/public
+      - BLOCK_RANGE=5514934
+      - ARCHIVE=astar
+      - V3_FIRST_BLOCK=5514934
+      - V3_PERIOD_LENGTH=878400
+      - V3_FIRST_ERA=651
+      - V3_ERAS_PER_PERIOD=112
+    ports:
+      # prometheus metrics exposed at port 3000
+      - "3000:3000"
+    command: ["sqd", "process:prod"]
+    depends_on:
+      - postgres

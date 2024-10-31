@@ -6,6 +6,7 @@
     "node": ">=16"
   },
   "scripts": {
+    "dev": "sqd process",
     "build": "rm -rf lib && tsc",
     "generate-metadata": "squid-substrate-metadata-explorer --rpc ws://127.0.0.1:9944 --out localNode.jsonl",
     "generate-migration": "npx squid-typeorm-migration generate",
@@ -13,7 +14,9 @@
     "deploy:astar": "sqd deploy . --org=astar-network --manifest=manifests/astar.yaml",
     "deploy:shibuya": "sqd deploy . --org=astar-network --manifest=manifests/shibuya.yaml",
     "deploy:shiden": "sqd deploy . --org=astar-network --manifest=manifests/shiden.yaml",
-    "test": "jest"
+    "test": "jest",
+    "build:docker": "docker build -t gamedao/astar-squid .",
+    "publish:docker": "docker -t gamedao/astar-squid gamedao/astar-squid:latest push",
   },
   "dependencies": {
     "@subsquid/archive-registry": "^3.3.2",
@@ -24,6 +27,7 @@
     "@subsquid/substrate-runtime": "^2.0.0",
     "@subsquid/typeorm-migration": "^1.3.0",
     "@subsquid/typeorm-store": "^1.5.1",
+    "@subsquid/util-internal": "^3.2.0",
     "dotenv": "^16.4.5",
     "pg": "8.12.0",
     "type-graphql": "^1.2.0-rc.1",
